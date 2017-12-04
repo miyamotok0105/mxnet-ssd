@@ -13,6 +13,7 @@ If you use mxnet-python api, you probably have already got them.
 You can install them via pip or package manegers, such as `apt-get`:
 ```
 sudo apt-get install python-opencv python-matplotlib python-numpy
+pip install mxnet-cu80
 ```
 * Clone this repo:
 ```
@@ -20,10 +21,7 @@ sudo apt-get install python-opencv python-matplotlib python-numpy
 sudo apt-get install git
 # cd where you would like to clone this repo
 cd ~
-git clone --recursive https://github.com/zhreshold/mxnet-ssd.git
-# make sure you clone this with --recursive
-# if not done correctly or you are using downloaded repo, pull them all via:
-# git submodule update --recursive --init
+git clone --recursive https://github.com/miyamotok0105/mxnet-ssd.git
 cd mxnet-ssd/mxnet
 ```
 * (Skip this step if you have offcial MXNet installed.) Build MXNet: `cd /path/to/mxnet-ssd/mxnet`. Follow the official instructions [here](http://mxnet.io/get_started/install.html).
