@@ -13,7 +13,7 @@ If you use mxnet-python api, you probably have already got them.
 You can install them via pip or package manegers, such as `apt-get`:
 ```
 sudo apt-get install python-opencv python-matplotlib python-numpy
-pip install mxnet-cu80
+pip install mxnet-cu80==0.12.1
 ```
 * Clone this repo:
 ```
