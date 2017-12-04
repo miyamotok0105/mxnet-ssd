@@ -87,6 +87,10 @@ insanely slow. Using CUDNN is optional, but highly recommanded.
 * Download the pretrained model: [`ssd_resnet50_0712.zip`](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.6/resnet50_ssd_512_voc0712_trainval.zip), and extract to `model/` directory.
 * Run
 ```
+# Download pretrained model
+cd model
+wget https://github.com/zhreshold/mxnet-ssd/releases/download/v0.6/resnet50_ssd_512_voc0712_trainval.zip
+unzip resnet50_ssd_512_voc0712_trainval.zip
 # cd /path/to/mxnet-ssd
 python demo.py --gpu 0
 # play with examples:

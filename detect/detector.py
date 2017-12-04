@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import print_function
 import mxnet as mx
 import numpy as np
@@ -35,10 +52,11 @@ class Detector(object):
         if symbol is None:
             symbol = load_symbol
         self.mod = mx.mod.Module(symbol, label_names=None, context=ctx)
+        if not isinstance(data_shape, tuple):
+            data_shape = (data_shape, data_shape)
         self.data_shape = data_shape
-        self.mod.bind(data_shapes=[('data', (batch_size, 3, data_shape, data_shape))])
+        self.mod.bind(data_shapes=[('data', (batch_size, 3, data_shape[0], data_shape[1]))])
         self.mod.set_params(args, auxs)
-        self.data_shape = data_shape
         self.mean_pixels = mean_pixels
 
     def detect(self, det_iter, show_timer=False):
@@ -57,22 +75,19 @@ class Detector(object):
         list of detection results
         """
         num_images = det_iter._size
-        result = []
-        detections = []
         if not isinstance(det_iter, mx.io.PrefetchingIter):
             det_iter = mx.io.PrefetchingIter(det_iter)
         start = timer()
-        for pred, _, _ in self.mod.iter_predict(det_iter):
-            detections.append(pred[0].asnumpy())
+        detections = self.mod.predict(det_iter).asnumpy()
         time_elapsed = timer() - start
         if show_timer:
             print("Detection time for {} images: {:.4f} sec".format(
                 num_images, time_elapsed))
-        for output in detections:
-            for i in range(output.shape[0]):
-                det = output[i, :, :]
-                res = det[np.where(det[:, 0] >= 0)[0]]
-                result.append(res)
+        result = []
+        for i in range(detections.shape[0]):
+            det = detections[i, :, :]
+            res = det[np.where(det[:, 0] >= 0)[0]]
+            result.append(res)
         return result
 
     def im_detect(self, im_list, root_dir=None, extension=None, show_timer=False):
@@ -174,3 +189,48 @@ class Detector(object):
             img = cv2.imread(im_list[k])
             img[:, :, (0, 1, 2)] = img[:, :, (2, 1, 0)]
             self.visualize_detection(img, det, classes, thresh)
+
+
+    def detect_and_write(self, im_list, root_dir=None, extension=None,
+                             classes=[], thresh=0.6, show_timer=False):
+        import cv2
+        dets = self.im_detect(im_list, root_dir, extension, show_timer=show_timer)
+        if not isinstance(im_list, list):
+            im_list = [im_list]
+        assert len(dets) == len(im_list)
+        for k, det in enumerate(dets):
+            img = cv2.imread(im_list[k])
+            img[:, :, (0, 1, 2)] = img[:, :, (2, 1, 0)]
+            #print(k)
+            #print(det)
+            #self.visualize_detection(img, det, classes, thresh)
+            self.write_detection(img, det, classes, thresh)
+        
+    def write_detection(self, img, dets, classes=[], thresh=0.8):
+        import cv2
+        import random
+        height = img.shape[0]
+        width = img.shape[1]
+        print("height", height)
+        print("width", width)
+        colors = dict()
+        for i in range(dets.shape[0]):
+            cls_id = int(dets[i, 0])
+            if cls_id >= 0:
+                score = dets[i, 1]
+                if score > thresh:
+                    if cls_id not in colors:
+                        colors[cls_id] = (random.random(), random.random(), random.random())
+                    xmin = int(dets[i, 2] * width)
+                    ymin = int(dets[i, 3] * height)
+                    xmax = int(dets[i, 4] * width)
+                    ymax = int(dets[i, 5] * height)
+                    img_rect = []
+                    img_rect = img.copy()
+                    cv2.rectangle(img_rect, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+                    print(xmin, ymin, xmax, ymax)
+                    class_name = str(cls_id)
+                    if classes and len(classes) > cls_id:
+                        class_name = classes[cls_id]
+                        cv2.imwrite(class_name + '.png', img_rect)
+                        print(class_name)
