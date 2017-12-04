@@ -60,28 +60,16 @@ See example of `dataset/pascal_voc.py` for details.
 into `model/` directory by default.
 * Download the PASCAL VOC dataset, skip this step if you already have one.
 ```
-cd /path/to/where_you_store_datasets/
+cd data
 wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
 wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar
 wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar
-# Extract the data.
 tar -xvf VOCtrainval_11-May-2012.tar
 tar -xvf VOCtrainval_06-Nov-2007.tar
 tar -xvf VOCtest_06-Nov-2007.tar
 ```
-* We are going to use `trainval` set in VOC2007/2012 as a common strategy.
-The suggested directory structure is to store `VOC2007` and `VOC2012` directories
-in the same `VOCdevkit` folder.
-* Then link `VOCdevkit` folder to `data/VOCdevkit` by default:
-```
-ln -s /path/to/VOCdevkit /path/to/this_example/data/VOCdevkit
-```
-Use hard link instead of copy could save us a bit disk space.
 * Create packed binary file for faster training:
 ```
-# cd /path/to/mxnet-ssd
-bash tools/prepare_pascal.sh
-# or if you are using windows
 python tools/prepare_dataset.py --dataset pascal --year 2007,2012 --set trainval --target ./data/train.lst
 python tools/prepare_dataset.py --dataset pascal --year 2007 --set test --target ./data/val.lst --shuffle False
 ```
