@@ -4,56 +4,8 @@ SSD is an unified framework for object detection with a single network.
 
 You can use the code to train/evaluate/test for object detection task.
 
-### Disclaimer
-This is a re-implementation of original SSD which is based on caffe. The official
-repository is available [here](https://github.com/weiliu89/caffe/tree/ssd).
-The arXiv paper is available [here](http://arxiv.org/abs/1512.02325).
-
-This example is intended for reproducing the nice detector while fully utilize the
-remarkable traits of MXNet.
-* The model is fully compatible with caffe version.
-* Model [converter](#convert-caffemodel) from caffe is available now!
-* The result is almost identical to the original version. However, due to different implementation details, the results might differ slightly.
-
-### What's new
-* Now this repo is internally synchronized up to data with offical mxnet backend. `pip install mxnet` will work for this repo as well in most cases.
-* MobileNet pretrained model now provided.
-* Added multiple trained models.
-* Added a much simpler way to compose network from mainstream classification networks (resnet, inception...) and [Guide](symbol/README.md).
-* Update to the latest version according to caffe version, with 5% mAP increase.
-* Use C++ record iterator based on back-end multi-thread engine to achieve huge speed up on multi-gpu environments.
-* Monitor validation mAP during training.
-* More network symbols under development and test.
-* Extra operators are now in `mxnet/src/operator/contrib`, symbols are modified. Please use [Release-v0.2-beta](https://github.com/zhreshold/mxnet-ssd/releases/tag/v0.2-beta) for old models.
-
 ### Demo results
-![demo1](https://cloud.githubusercontent.com/assets/3307514/19171057/8e1a0cc4-8be0-11e6-9d8f-088c25353b40.png)
 ![demo2](https://cloud.githubusercontent.com/assets/3307514/19171063/91ec2792-8be0-11e6-983c-773bd6868fa8.png)
-![demo3](https://cloud.githubusercontent.com/assets/3307514/19171086/a9346842-8be0-11e6-8011-c17716b22ad3.png)
-
-### mAP
-|        Model          | Training data    | Test data |  mAP | Note |
-|:-----------------:|:----------------:|:---------:|:----:|:-----|
-| [VGG16_reduced 300x300](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.5-beta/vgg16_ssd_300_voc0712_trainval.zip) | VOC07+12 trainval| VOC07 test| 77.8| fast |
-| [VGG16_reduced 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.5-beta/vgg16_ssd_512_voc0712_trainval.zip) | VOC07+12 trainval | VOC07 test| 79.9| slow |
-| [Inception-v3 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/ssd_inceptionv3_512_voc0712trainval.zip) | VOC07+12 trainval| VOC07 test| 78.9 | fastest |
-| [Resnet-50 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/ssd_resnet50_512_voc0712trainval.zip) | VOC07+12 trainval| VOC07 test| 79.1 | fast |
-| [MobileNet 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/mobilenet-ssd-512.zip) | VOC07+12 trainval| VOC07 test| 72.5 | super fast |
-| [MobileNet 608x608](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/mobilenet-ssd-608.zip) | VOC07+12 trainval| VOC07 test| 74.7 | super fast |
-
-
-*More to be added*
-
-### Speed
-|         Model         |   GPU            | CUDNN | Batch-size | FPS* |
-|:---------------------:|:----------------:|:-----:|:----------:|:----:|
-| VGG16_reduced 300x300 | TITAN X(Maxwell) | v5.1  |     16     | 95   |
-| VGG16_reduced 300x300 | TITAN X(Maxwell) | v5.1  |     8      | 95   |
-| VGG16_reduced 300x300 | TITAN X(Maxwell) | v5.1  |     1      | 64   |
-| VGG16_reduced 300x300 | TITAN X(Maxwell) |  N/A  |     8      | 36   |
-| VGG16_reduced 300x300 | TITAN X(Maxwell) |  N/A  |     1      | 28   |
-
-*Forward time only, data loading and drawing excluded.*
 
 ### Getting started
 * You will need python modules: `cv2`, `matplotlib` and `numpy`.
@@ -183,3 +135,30 @@ For example:
 ```
 python demo.py --network 'legacy_vgg16_ssd_300.py' --prefix model/ssd_300 --epoch 0
 ```
+
+
+
+### mAP
+|        Model          | Training data    | Test data |  mAP | Note |
+|:-----------------:|:----------------:|:---------:|:----:|:-----|
+| [VGG16_reduced 300x300](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.5-beta/vgg16_ssd_300_voc0712_trainval.zip) | VOC07+12 trainval| VOC07 test| 77.8| fast |
+| [VGG16_reduced 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.5-beta/vgg16_ssd_512_voc0712_trainval.zip) | VOC07+12 trainval | VOC07 test| 79.9| slow |
+| [Inception-v3 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/ssd_inceptionv3_512_voc0712trainval.zip) | VOC07+12 trainval| VOC07 test| 78.9 | fastest |
+| [Resnet-50 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/ssd_resnet50_512_voc0712trainval.zip) | VOC07+12 trainval| VOC07 test| 79.1 | fast |
+| [MobileNet 512x512](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/mobilenet-ssd-512.zip) | VOC07+12 trainval| VOC07 test| 72.5 | super fast |
+| [MobileNet 608x608](https://github.com/zhreshold/mxnet-ssd/releases/download/v0.7-alpha/mobilenet-ssd-608.zip) | VOC07+12 trainval| VOC07 test| 74.7 | super fast |
+
+
+*More to be added*
+
+### Speed
+|         Model         |   GPU            | CUDNN | Batch-size | FPS* |
+|:---------------------:|:----------------:|:-----:|:----------:|:----:|
+| VGG16_reduced 300x300 | TITAN X(Maxwell) | v5.1  |     16     | 95   |
+| VGG16_reduced 300x300 | TITAN X(Maxwell) | v5.1  |     8      | 95   |
+| VGG16_reduced 300x300 | TITAN X(Maxwell) | v5.1  |     1      | 64   |
+| VGG16_reduced 300x300 | TITAN X(Maxwell) |  N/A  |     8      | 36   |
+| VGG16_reduced 300x300 | TITAN X(Maxwell) |  N/A  |     1      | 28   |
+
+*Forward time only, data loading and drawing excluded.*
+
