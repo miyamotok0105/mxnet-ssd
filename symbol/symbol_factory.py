@@ -1,7 +1,23 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """Presets for various network configurations"""
-from __future__ import absolute_import
 import logging
-from . import symbol_builder
+from symbol import symbol_builder
 
 def get_config(network, data_shape, **kwargs):
     """Configuration factory for various networks
@@ -77,18 +93,6 @@ def get_config(network, data_shape, **kwargs):
         sizes = [[.1, .141], [.2,.272], [.37, .447], [.54, .619], [.71, .79], [.88, .961]]
         ratios = [[1,2,.5], [1,2,.5,3,1./3], [1,2,.5,3,1./3], [1,2,.5,3,1./3], \
             [1,2,.5], [1,2,.5]]
-        normalizations = -1
-        steps = []
-        return locals()
-    elif network == 'mobilenet':
-        from_layers = ['conv_12_relu', 'conv_14_relu', '', '', '', '', '']
-        num_filters = [-1, -1, 512, 256, 256, 256, 256]
-        strides = [-1, -1, 2, 2, 2, 2, 2]
-        pads = [-1, -1, 1, 1, 1, 1, 1]
-        sizes = [[.07, .1025], [.15,.2121], [.3, .3674], [.45, .5196], [.6, .6708], \
-            [.75, .8216], [.9, .9721]]
-        ratios = [[1,2,.5], [1,2,.5,3,1./3], [1,2,.5,3,1./3], [1,2,.5,3,1./3], \
-            [1,2,.5,3,1./3], [1,2,.5], [1,2,.5]]
         normalizations = -1
         steps = []
         return locals()

@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import tools.find_mxnet
 import mxnet as mx
 import logging
@@ -10,57 +27,29 @@ from train.metric import MultiBoxMetric
 from evaluate.eval_metric import MApMetric, VOC07MApMetric
 from config.config import cfg
 from symbol.symbol_factory import get_symbol_train
-from evaluate.custom_callbacks import LogDistributionsCallback, LogROCCallback, ParseLogCallback, LogDetectionsCallback
-from tools.visualize_net import net_visualization
 
 def convert_pretrained(name, args):
     """
     Special operations need to be made due to name inconsistance, etc
+
     Parameters:
     ---------
     name : str
         pretrained model name
     args : dict
         loaded arguments
+
     Returns:
     ---------
     processed arguments as dict
     """
     return args
 
-def get_optimizer_params(optimizer=None, learning_rate=None, momentum=None,
-                         weight_decay=None, lr_scheduler=None, ctx=None, logger=None):
-    if optimizer.lower() == 'rmsprop':
-        opt = 'rmsprop'
-        logger.info('you chose RMSProp, decreasing lr by a factor of 10')
-        optimizer_params = {'learning_rate': learning_rate / 10.0,
-                            'wd': weight_decay,
-                            'lr_scheduler': lr_scheduler,
-                            'clip_gradient': None,
-                            'rescale_grad': 1.0 / len(ctx) if len(ctx) > 0 else 1.0}
-    elif optimizer.lower() == 'sgd':
-        opt = 'sgd'
-        optimizer_params = {'learning_rate': learning_rate,
-                            'momentum': momentum,
-                            'wd': weight_decay,
-                            'lr_scheduler': lr_scheduler,
-                            'clip_gradient': None,
-                            'rescale_grad': 1.0 / len(ctx) if len(ctx) > 0 else 1.0}
-    elif optimizer.lower() == 'adadelta':
-        opt = 'adadelta'
-        optimizer_params = {}
-    elif optimizer.lower() == 'adam':
-        opt = 'adam'
-        optimizer_params = {'learning_rate': learning_rate,
-                            'lr_scheduler': lr_scheduler,
-                            'clip_gradient': None,
-                            'rescale_grad': 1.0 / len(ctx) if len(ctx) > 0 else 1.0}
-        return opt, optimizer_params
-    
 def get_lr_scheduler(learning_rate, lr_refactor_step, lr_refactor_ratio,
                      num_example, batch_size, begin_epoch):
     """
     Compute learning rate and refactor scheduler
+
     Parameters:
     ---------
     learning_rate : float
@@ -75,6 +64,7 @@ def get_lr_scheduler(learning_rate, lr_refactor_step, lr_refactor_ratio,
         training batch size
     begin_epoch : int
         starting epoch
+
     Returns:
     ---------
     (learning_rate, mx.lr_scheduler) as tuple
@@ -97,7 +87,7 @@ def get_lr_scheduler(learning_rate, lr_refactor_step, lr_refactor_ratio,
         lr_scheduler = mx.lr_scheduler.MultiFactorScheduler(step=steps, factor=lr_refactor_ratio)
         return (lr, lr_scheduler)
 
-def train_net(network, train_path, num_classes, batch_size,
+def train_net(net, train_path, num_classes, batch_size,
               data_shape, mean_pixels, resume, finetune, pretrained, epoch,
               prefix, ctx, begin_epoch, end_epoch, frequent, learning_rate,
               momentum, weight_decay, lr_refactor_step, lr_refactor_ratio,
@@ -107,10 +97,10 @@ def train_net(network, train_path, num_classes, batch_size,
               use_difficult=False, class_names=None,
               voc07_metric=False, nms_topk=400, force_suppress=False,
               train_list="", val_path="", val_list="", iter_monitor=0,
-              #monitor_pattern=".*", log_file=None):
-              monitor_pattern=".*", log_file=None, optimizer='sgd', tensorboard=False, checkpoint_period=5, min_neg_samples=0):
+              monitor_pattern=".*", log_file=None):
     """
     Wrapper for training phase.
+
     Parameters:
     ----------
     net : str
@@ -181,18 +171,14 @@ def train_net(network, train_path, num_classes, batch_size,
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     if log_file:
-        log_file_path = os.path.join(os.path.dirname(prefix), log_file)
-        if not os.path.exists(os.path.dirname(log_file_path)):
-            os.mkdir(os.path.dirname(log_file_path))
-        fh = logging.FileHandler(log_file_path)
+        fh = logging.FileHandler(log_file)
         logger.addHandler(fh)
 
     # check args
     if isinstance(data_shape, int):
         data_shape = (3, data_shape, data_shape)
     assert len(data_shape) == 3 and data_shape[0] == 3
-    if prefix.endswith('_'):
-        prefix += '_' + str(data_shape[1])
+    prefix += '_' + net + '_' + str(data_shape[1])
 
     if isinstance(mean_pixels, (int, float)):
         mean_pixels = [mean_pixels, mean_pixels, mean_pixels]
@@ -208,10 +194,9 @@ def train_net(network, train_path, num_classes, batch_size,
         val_iter = None
 
     # load symbol
-    net = get_symbol_train(network, data_shape[1], num_classes=num_classes,
-                           nms_thresh=nms_thresh,
-                           force_suppress=force_suppress, nms_topk=nms_topk,
-                           minimum_negative_samples=min_neg_samples)
+    net = get_symbol_train(net, data_shape[1], num_classes=num_classes,
+        nms_thresh=nms_thresh, force_suppress=force_suppress, nms_topk=nms_topk)
+
     # define layers with fixed weight/bias
     if freeze_layer_pattern.strip():
         re_prog = re.compile(freeze_layer_pattern)
@@ -220,7 +205,7 @@ def train_net(network, train_path, num_classes, batch_size,
         fixed_param_names = None
 
     # load pretrained or resume from previous state
-    ctx_str = '(' + ','.join([str(c) for c in ctx]) + ')'
+    ctx_str = '('+ ','.join([str(c) for c in ctx]) + ')'
     if resume > 0:
         logger.info("Resume training with {} from epoch {}"
             .format(ctx_str, resume))
@@ -231,18 +216,9 @@ def train_net(network, train_path, num_classes, batch_size,
             .format(ctx_str, finetune))
         _, args, auxs = mx.model.load_checkpoint(prefix, finetune)
         begin_epoch = finetune
-        # check what layers mismatch with the loaded parameters
-        exe = net.simple_bind(mx.cpu(), data=(1, 3, 300, 300), label=(1, 1, 5), grad_req='null')
-        arg_dict = exe.arg_dict
-        fixed_param_names = []
-        for k, v in arg_dict.items():
-            if k in args:
-                if v.shape != args[k].shape:
-                    del args[k]
-                    logging.info("Removed %s" % k)
-                else:
-                    if not 'pred' in k:
-                        fixed_param_names.append(k)
+        # the prediction convolution layers name starts with relu, so it's fine
+        fixed_param_names = [name for name in net.list_arguments() \
+            if name.startswith('conv')]
     elif pretrained:
         logger.info("Start training with {} from pretrained model {}"
             .format(ctx_str, pretrained))
@@ -259,71 +235,37 @@ def train_net(network, train_path, num_classes, batch_size,
     if fixed_param_names:
         logger.info("Freezed parameters: [" + ','.join(fixed_param_names) + ']')
 
-    # visualize net
-    net_visualization(net=net, network=network,data_shape=data_shape[2],
-                      output_dir=os.path.dirname(prefix), train=True)
-    
     # init training module
     mod = mx.mod.Module(net, label_names=('label',), logger=logger, context=ctx,
                         fixed_param_names=fixed_param_names)
 
-
-    batch_end_callback = []
-    eval_end_callback = []
-    epoch_end_callback = [mx.callback.do_checkpoint(prefix, period=checkpoint_period)]
-
-    # add logging to tensorboard
-    if tensorboard:
-        tensorboard_dir = os.path.join(os.path.dirname(prefix), 'logs')
-        if not os.path.exists(tensorboard_dir):
-            os.makedirs(os.path.join(tensorboard_dir, 'train', 'scalar'))
-            os.makedirs(os.path.join(tensorboard_dir, 'train', 'dist'))
-            os.makedirs(os.path.join(tensorboard_dir, 'val', 'roc'))
-            os.makedirs(os.path.join(tensorboard_dir, 'val', 'scalar'))
-            os.makedirs(os.path.join(tensorboard_dir, 'val', 'images'))
-        batch_end_callback.append(
-            ParseLogCallback(dist_logging_dir=os.path.join(tensorboard_dir, 'train', 'dist'),
-                             scalar_logging_dir=os.path.join(tensorboard_dir, 'train', 'scalar'),
-                             logfile_path=log_file_path, batch_size=batch_size, iter_monitor=iter_monitor,
-                             frequent=frequent))
-        eval_end_callback.append(mx.contrib.tensorboard.LogMetricsCallback(
-            os.path.join(tensorboard_dir, 'val/scalar'), 'ssd'))
-        eval_end_callback.append(LogROCCallback(logging_dir=os.path.join(tensorboard_dir, 'val/roc'),
-                                                roc_path=os.path.join(os.path.dirname(prefix), 'roc'),
-                                                class_names=class_names))
-        eval_end_callback.append(LogDetectionsCallback(logging_dir=os.path.join(tensorboard_dir, 'val/images'),
-                                                       images_path=os.path.join(os.path.dirname(prefix), 'images'),
-                                                       class_names=class_names,batch_size=batch_size,mean_pixels=mean_pixels))
-
-    # this callback should be the last in a serie of batch_callbacks
-    # since it is resetting the metric evaluation every $frequent batches
-    batch_end_callback.append(mx.callback.Speedometer(train_iter.batch_size, frequent=frequent))
-
+    # fit parameters
+    batch_end_callback = mx.callback.Speedometer(train_iter.batch_size, frequent=frequent)
+    epoch_end_callback = mx.callback.do_checkpoint(prefix)
     learning_rate, lr_scheduler = get_lr_scheduler(learning_rate, lr_refactor_step,
-                                                   lr_refactor_ratio, num_example, batch_size, begin_epoch)
-    # add possibility for different optimizer
-    opt, opt_params = get_optimizer_params(optimizer=optimizer, learning_rate=learning_rate, momentum=momentum,
-                                           weight_decay=weight_decay, lr_scheduler=lr_scheduler, ctx=ctx, logger=logger)
-    # TODO monitor the gradient flow as in 'https://github.com/dmlc/tensorboard/blob/master/docs/tutorial/understanding-vanish-gradient.ipynb'
+        lr_refactor_ratio, num_example, batch_size, begin_epoch)
+    optimizer_params={'learning_rate':learning_rate,
+                      'momentum':momentum,
+                      'wd':weight_decay,
+                      'lr_scheduler':lr_scheduler,
+                      'clip_gradient':None,
+                      'rescale_grad': 1.0 / len(ctx) if len(ctx) > 0 else 1.0 }
     monitor = mx.mon.Monitor(iter_monitor, pattern=monitor_pattern) if iter_monitor > 0 else None
 
     # run fit net, every n epochs we run evaluation network to get mAP
     if voc07_metric:
-        valid_metric = VOC07MApMetric(ovp_thresh, use_difficult, class_names, pred_idx=3,
-                                      roc_output_path=os.path.join(os.path.dirname(prefix), 'roc'))
+        valid_metric = VOC07MApMetric(ovp_thresh, use_difficult, class_names, pred_idx=3)
     else:
-        valid_metric = MApMetric(ovp_thresh, use_difficult, class_names, pred_idx=3,
-                                 roc_output_path=os.path.join(os.path.dirname(prefix), 'roc'))
+        valid_metric = MApMetric(ovp_thresh, use_difficult, class_names, pred_idx=3)
 
     mod.fit(train_iter,
             val_iter,
             eval_metric=MultiBoxMetric(),
             validation_metric=valid_metric,
             batch_end_callback=batch_end_callback,
-            eval_end_callback=eval_end_callback,
             epoch_end_callback=epoch_end_callback,
-            optimizer=opt,
-            optimizer_params=opt_params,
+            optimizer='sgd',
+            optimizer_params=optimizer_params,
             begin_epoch=begin_epoch,
             num_epoch=end_epoch,
             initializer=mx.init.Xavier(),
@@ -331,4 +273,3 @@ def train_net(network, train_path, num_classes, batch_size,
             aux_params=auxs,
             allow_missing=True,
             monitor=monitor)
-
